@@ -17,6 +17,16 @@ from config import AI_MODEL, AI_MAX_TOKENS, AI_TEMPERATURE, GEMINI_API_KEY
 
 _CLIENT = None
 
+
+def _resolve_api_key() -> str:
+    """Get API key from Streamlit secrets (Cloud) or env var."""
+    if GEMINI_API_KEY:
+        return GEMINI_API_KEY
+    try:
+        return st.secrets["GEMINI_API_KEY"]
+    except (KeyError, FileNotFoundError):
+        return ""
+
 SYSTEM_PROMPT = (
     "You are a marketing analyst assistant for a gaming and PC hardware brand "
     "(similar to Corsair). You help evaluate creator and affiliate partners. "
@@ -27,9 +37,10 @@ SYSTEM_PROMPT = (
 def _get_client():
     global _CLIENT
     if _CLIENT is None:
-        if not GEMINI_API_KEY:
-            raise ValueError("No Gemini API key configured")
-        _CLIENT = genai.Client(api_key=GEMINI_API_KEY)
+        key = _resolve_api_key()
+        if not key:
+            raise ValueError("No Gemini API key configured — set GEMINI_API_KEY env var")
+        _CLIENT = genai.Client(api_key=key)
     return _CLIENT
 
 
